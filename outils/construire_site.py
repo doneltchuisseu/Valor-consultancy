@@ -119,6 +119,12 @@ function go(i){var n=pages();pg=(i+n)%n;t.scrollTo({left:it[Math.min(it.length-1
 c.querySelector('.cprev').onclick=function(){go(pg-1)};c.querySelector('.cnext').onclick=function(){go(pg+1)};
 t.addEventListener('scroll',function(){clearTimeout(t._s);t._s=setTimeout(mark,80)});c.addEventListener('mouseenter',function(){paused=true});c.addEventListener('mouseleave',function(){paused=false});
 window.addEventListener('resize',build);build();setInterval(function(){if(!paused&&document.visibilityState==='visible')go(pg+1)},5500)});
+</script>'''+r'''
+<script>
+(function(){document.querySelectorAll('[data-yt]').forEach(function(a){a.addEventListener('click',function(e){e.preventDefault();var id=a.getAttribute('data-yt'),m=document.createElement('div');m.className='vmodal';
+m.innerHTML='<div class="vbox"><button class="vclose" aria-label="Fermer">×</button><iframe src="https://www.youtube-nocookie.com/embed/'+id+'?autoplay=1&rel=0" title="Vidéo" allow="autoplay; encrypted-media; picture-in-picture; fullscreen" allowfullscreen></iframe><a class="vyt" href="https://www.youtube.com/watch?v='+id+'" target="_blank" rel="noopener">Ouvrir sur YouTube</a></div>';
+function close(){m.remove();document.body.style.overflow='';document.removeEventListener('keydown',k)}function k(ev){if(ev.key==='Escape')close()}
+m.addEventListener('click',function(ev){if(ev.target===m||ev.target.className==='vclose')close()});document.addEventListener('keydown',k);document.body.appendChild(m);document.body.style.overflow='hidden'})})})();
 </script>'''
 def page(title,desc,content,active='',depth=0,head=None,extra=''):
     r='../'*depth
@@ -196,7 +202,7 @@ home=f'''<section class="hero"><div class="wrap herogrid"><div class="ht">{eyebr
 <div class="hv"><div class="hvimg"><img src="{HERO}" alt="Distinction" onerror="this.onerror=null;this.src='{MV}'"></div></div></div></section>
 <section class="sec"><div class="wrap">{eyebrow('Nos services',True)}<h2 class="c">Notre offre de services</h2>{carousel(svc_cards,"scar")}</div></section>
 <section class="sec alt"><div class="wrap">{eyebrow('Nos formations',True)}<h2 class="c">Notre offre de formations</h2>{crs}<p class="c"><a class="btn ghost" href="formations.html">Toutes nos formations</a></p></div></section>
-<section class="band"><div class="bandin"><p class="eyebrow w c">Valor Consultancy Africa</p><h2>Femme leader et d’impact en Afrique</h2><a class="play" href="https://www.youtube.com/watch?v=SF4aHwxHtZ0" target="_blank" rel="noopener" aria-label="Voir la vidéo"><i></i></a></div></section>
+<section class="band"><div class="bandin"><p class="eyebrow w c">Valor Consultancy Africa</p><h2>Femme leader et d’impact en Afrique</h2><a class="play" data-yt="SF4aHwxHtZ0" href="https://www.youtube.com/watch?v=SF4aHwxHtZ0" target="_blank" rel="noopener" aria-label="Voir la vidéo"><i></i></a></div></section>
 <section class="sec"><div class="wrap">{eyebrow('Equipe VCA',True)}<h2 class="c">Notre équipe</h2><p class="c mut">Des personnes compétentes, dynamiques et prêtes à vous accompagner.</p><div class="tmg">{teamh}</div></div></section>
 <section class="sec alt"><div class="wrap">{eyebrow('Actualités',True)}<h2 class="c">Veille documentaire</h2><p class="c mut">Suivez nos dernières nouvelles et réflexions.</p><div class="nwg">{news}</div><p class="c"><a class="btn" href="actualites.html">Toutes les actualités</a></p></div></section>
 <section class="sec"><div class="wrap">{eyebrow('Et aussi',True)}<h2 class="c">Et aussi...</h2><div class="logos">{logoh}</div><div class="chips">{chips}</div></div></section>
@@ -353,6 +359,8 @@ footer{background:linear-gradient(rgba(25,28,28,.94),rgba(25,28,28,.94)),#1c1f1f
 .fgrid2{display:grid;grid-template-columns:repeat(auto-fill,minmax(300px,1fr));gap:28px;margin:36px 0 10px}
 .fhero{position:relative;min-height:380px;background:#24346e center/cover;display:grid;place-items:center;text-align:center;color:#fff}.fhero:before{content:"";position:absolute;inset:0;background:rgba(30,44,96,.72)}.fhin{position:relative;max-width:760px;padding:60px 24px}.fhin h2{color:#fff;font-size:clamp(28px,4vw,44px)}.fhin p{color:#e6ebf5}
 .fstrip{display:grid;grid-template-columns:repeat(3,1fr);gap:0}.fs{height:240px;background:center/cover}
+.vmodal{position:fixed;inset:0;z-index:100;background:rgba(10,14,30,.88);display:grid;place-items:center;padding:20px}.vbox{position:relative;width:min(960px,100%);aspect-ratio:16/9;background:#000;box-shadow:0 30px 80px rgba(0,0,0,.5)}.vbox iframe{width:100%;height:100%;border:0;display:block}
+.vclose{position:absolute;top:-46px;right:0;background:none;border:0;color:#fff;font-size:40px;line-height:1;cursor:pointer}.vyt{position:absolute;left:0;bottom:-34px;color:#cfd6f0;font-size:14px}
 @media(max-width:860px){.car .item{flex:0 0 86%}.fstrip{grid-template-columns:1fr}.mvgrid{grid-template-columns:1fr}}
 @media(max-width:860px){.herogrid,.ctgrid,.fgrid{grid-template-columns:1fr}.hvimg{margin:0 auto}.burger{display:block}nav{display:none;position:absolute;left:0;right:0;top:100%;background:#fff;padding:10px 20px 16px;flex-direction:column;align-items:flex-start;box-shadow:0 12px 20px rgba(0,0,0,.08);border-radius:0 0 12px 12px}body.open nav{display:flex}.navbar{position:relative}.dd .ddm{position:static;display:block;box-shadow:none;padding-left:10px}.float{display:none}.sec{padding:46px 0}.band{clip-path:none}}
 ''')
