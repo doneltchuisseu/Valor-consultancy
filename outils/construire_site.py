@@ -84,7 +84,12 @@ SVCIMG={'LEADERSHIP':P('IMG-20220826-WA0053.jpg','IMG-20220826-WA0053.jpg.webp')
 pages={p['slug']:p for p in D if p['type']=='page' and p['status']=='publish'}
 services=sorted([p for p in D if p['type']=='service' and p['status']=='publish'],key=lambda x:x['id'])
 posts=[p for p in D if p['type']=='post' and p['status']=='publish' and not SPAM.search(p['title']) and not SPAM.search(p['content'][:800])]
+def _usable(p):
+    b=body(p['content'])
+    return len(text(p['content']))>=60 or '/wp-content/uploads/pool/' in b
+_all=len(posts); posts=[p for p in posts if _usable(p)]
 posts.sort(key=lambda x:x['date'],reverse=True)
+print('articles masqués (sans texte ni image):',_all-len(posts))
 courses=[c for c in D if c['type']=='courses' and c['status']=='publish']
 def svc_title(s):
     t=text(s['title']).title()
@@ -103,6 +108,17 @@ ICO={'pin':'<svg viewBox="0 0 24 24"><path d="M12 2a7 7 0 0 0-7 7c0 5 7 13 7 13s
 'wa':'<svg viewBox="0 0 24 24"><path d="M12 2a10 10 0 0 0-8.600 15L2 22l5.200-1.400A10 10 0 1 0 12 2zm5.300 14.200c-.2.600-1.300 1.200-1.800 1.200-.5.100-1 .2-3.300-.7-2.800-1.100-4.500-4-4.700-4.200-.1-.2-1.100-1.500-1.100-2.800 0-1.300.7-2 .9-2.200.2-.3.5-.3.700-.3h.5c.2 0 .4 0 .6.500l.8 2c.1.200.1.400 0 .5l-.4.600c-.1.200-.3.300-.1.600.2.300.8 1.300 1.700 2.100 1.200 1 2.100 1.300 2.400 1.500.3.100.4.100.6-.1l.8-1c.2-.3.400-.2.600-.1l1.900.9c.3.100.4.200.5.300.1.200.1.800-.1 1.300z"/></svg>',
 'arrow':'<svg viewBox="0 0 24 24"><path d="M12 5l7 7-1.400 1.400L13 8.800V20h-2V8.800l-4.600 4.600L5 12z"/></svg>'}
 NAVL=[('index.html','Accueil'),('a-propos.html','À propos'),('services.html','Services'),('formations.html','Formations'),('actualites.html','Actualités'),('agenda.html','Agenda'),('nous-rejoindre.html','Nous rejoindre')]
+CARJS=r'''<script>
+document.querySelectorAll('.car').forEach(function(c){var t=c.querySelector('.track'),it=[].slice.call(t.querySelectorAll('.item')),d=c.querySelector('.dots'),pg=0,paused=false;
+function vis(){return Math.max(1,Math.round(t.clientWidth/(it[0].getBoundingClientRect().width+28)))}
+function pages(){return Math.ceil(it.length/vis())}
+function build(){d.innerHTML='';for(var i=0;i<pages();i++){(function(i){var e=document.createElement('i');e.onclick=function(){go(i)};d.appendChild(e)})(i)}mark()}
+function mark(){var p=Math.round(t.scrollLeft/Math.max(1,t.clientWidth)*1);var k=Math.min(pages()-1,Math.round(t.scrollLeft/(t.scrollWidth/pages())));[].forEach.call(d.children,function(e,i){e.className=i===k?'on':''});pg=k}
+function go(i){var n=pages();pg=(i+n)%n;t.scrollTo({left:it[Math.min(it.length-1,pg*vis())].offsetLeft-t.offsetLeft-6,behavior:'smooth'})}
+c.querySelector('.cprev').onclick=function(){go(pg-1)};c.querySelector('.cnext').onclick=function(){go(pg+1)};
+t.addEventListener('scroll',function(){clearTimeout(t._s);t._s=setTimeout(mark,80)});c.addEventListener('mouseenter',function(){paused=true});c.addEventListener('mouseleave',function(){paused=false});
+window.addEventListener('resize',build);build();setInterval(function(){if(!paused&&document.visibilityState==='visible')go(pg+1)},5500)});
+</script>'''
 def page(title,desc,content,active='',depth=0,head=None,extra=''):
     r='../'*depth
     sub=''.join(f'<a href="{r}{s["url"]}">{esc(svc_title(s))}</a>' for s in services)
@@ -133,12 +149,23 @@ def page(title,desc,content,active='',depth=0,head=None,extra=''):
 <div><h4>Services</h4><div class="flinks">{svcl}</div></div>
 <div><h4>Newsletter</h4><form class="nl" onsubmit="location.href='mailto:info@valorconsultancyafrica.com?subject=Newsletter&body=Merci d\\'inscrire cette adresse : '+encodeURIComponent(this.m.value);return false"><input name="m" type="email" placeholder="Adresse e-mail" required><button aria-label="Envoyer">→</button></form>
 <div class="soc"><a href="https://www.linkedin.com/in/valor-consultancy-africa-492721244" target="_blank" rel="noopener" aria-label="LinkedIn">{ICO['in']}</a><a href="https://wa.me/237672950994" target="_blank" rel="noopener" aria-label="WhatsApp">{ICO['wa']}</a></div></div></div>
-<div class="copy">© 2026 Valor Consultancy Africa. Tous droits réservés.</div></footer>{extra}</body></html>'''
+<div class="copy">© 2026 Valor Consultancy Africa. Tous droits réservés.</div></footer>{CARJS}{extra}</body></html>'''
 
+import urllib.parse
 # ---------- accueil
+
+BGN=['group-of-young-people-sitting-on-conference-together.jpg','businesspeople-celebrating-success-600x400.jpg','businesswoman-with-face-mask-talking-to-her-colleagues-on-presentation-in-the-office.jpg','close-up-of-busy-businesswoman-writing-1536x1024.jpg','executives-joking-and-laughing-in-the-office.jpg.webp','staff-meeting-group-of-young-modern-people-in-smart-casual-wear-discussing-something-while-working-in-the-creative-office-business-time.jpg.webp','talking-to-audience.jpg.webp','group-of-diverse-people-having-business-meeting.jpg.webp','businessman-wearing-face-mask-while-giving-presentation-at-conference-hall-768x512.jpg.webp','network-connection-graphic-overlay-background-on-computer-screen-1536x922.jpg','formation.jpg','group-of-young-people-sitting-on-conference-together-while-raising-their-hands-to-ask-question-business-team-meeting-seminar-training-concept.jpg']
+BG=[x for x in (P(n) for n in BGN) if x]
+def fc_card(c,i):
+    t=text(c['title']); ex=text(c.get('excerpt',''),110)
+    bg=f'<div class="fcbg" style="background-image:url({BG[i%len(BG)]})"></div>' if BG else ''
+    mail='mailto:info@valorconsultancyafrica.com?subject='+urllib.parse.quote('Formation : '+t)
+    return f'<div class="fc item">{bg}<div class="fcin"><h3>{esc(t)}</h3><p>{esc(ex)}</p><span class="plus">+</span><a class="btn sm" href="{mail}">En savoir plus</a></div></div>'
+def carousel(items,cls=''):
+    return f'<div class="car {cls}"><div class="track">{items}</div><div class="cnav"><button class="cprev" aria-label="Précédent">‹</button><div class="dots"></div><button class="cnext" aria-label="Suivant">›</button></div></div>'
 def eyebrow(t,center=False): return f'<p class="eyebrow{" c" if center else ""}">{esc(t)}</p>'
-svc_cards=''.join(f'<a class="sc" href="{s["url"]}"><div class="scimg">{"<img src=%s alt=\"\" loading=lazy onerror=\"this.parentNode.classList.add(&#39;noimg&#39;)\">"%s["img"] if s["img"] else ""}</div><h3>{esc(text(s["title"]).upper())}</h3><p>{esc(re.sub("^"+re.escape(text(s["title"])),"",text(s["content"],200),flags=re.I).strip()[:110])}…</p></a>' for s in services)
-crs=''.join(f'<div class="cc"><h3>{esc(text(c["title"]))}</h3><p>{esc(text(c.get("excerpt",""),90))}</p><a class="plus" href="formations.html" aria-label="Voir">+</a></div>' for c in courses[:6])
+svc_cards=''.join(f'<a class="sc item" href="{s["url"]}"><div class="scimg">{"<img src=%s alt=\"\" loading=lazy onerror=\"this.parentNode.classList.add(&#39;noimg&#39;)\">"%s["img"] if s["img"] else ""}</div><h3>{esc(text(s["title"]).upper())}</h3><p>{esc(re.sub("^"+re.escape(text(s["title"])),"",text(s["content"],200),flags=re.I).strip()[:110])}…</p></a>' for s in services)
+crs=carousel(''.join(fc_card(c,i) for i,c in enumerate(courses)),'fcar')
 team=[('Marie-Victoire VÉNUS-PLOTON','Présidente Fondatrice de VCA',MV),('Didier Boris ANOKALI LANGOLO','Consultant Junior',P('ANOKALI-300x300.jpg')),('Daniel VALIYA','Consultant Junior',P('DANIEL-394x450.jpg'))]
 teamh=''.join(f'<div class="tm"><div class="tmimg"><img src="{i}" alt="{esc(n)}" loading="lazy"></div><div class="tmb"><div><b>{esc(n)}</b><span>{esc(p)}</span></div><a class="sq" href="marie-victoire-venus-ploton.html">+</a></div></div>' if 'Marie' in n else f'<div class="tm"><div class="tmimg"><img src="{i}" alt="{esc(n)}" loading="lazy"></div><div class="tmb"><div><b>{esc(n)}</b><span>{esc(p)}</span></div><i class="sq">+</i></div></div>' for n,p,i in team)
 news=''.join(f'<a class="nw" href="{p["url"]}"><small>{fdate(p["date"])}</small><b>{esc(text(p["title"]))}</b><span>En savoir plus →</span></a>' for p in posts[:6])
@@ -156,8 +183,8 @@ home=f'''<section class="hero"><div class="wrap herogrid"><div class="ht">{eyebr
 <p class="lead">Le Cabinet Valor Consultancy Africa (VCA) est spécialisé dans le Conseil et l’Ingénierie en Organisation. Le cabinet VCA intervient en France, sur le continent africain, en liaison avec des partenaires internationaux pour élaborer avec vous et pour vous, <b>une stratégie</b> et obtenir <b>des résultats</b> adaptés.</p>
 <p class="sig"><b>MARIE-VICTOIRE VÉNUS-PLOTON</b><span>Présidente Fondatrice de Valor Consultancy Africa</span></p></div>
 <div class="hv"><div class="hvimg"><img src="{HERO}" alt="Distinction" onerror="this.onerror=null;this.src='{MV}'"></div></div></div></section>
-<section class="sec"><div class="wrap">{eyebrow('Nos services',True)}<h2 class="c">Notre offre de services</h2><div class="scg">{svc_cards}</div></div></section>
-<section class="sec alt"><div class="wrap">{eyebrow('Nos formations',True)}<h2 class="c">Notre offre de formations</h2><div class="ccg">{crs}</div><p class="c"><a class="btn ghost" href="formations.html">Toutes nos formations</a></p></div></section>
+<section class="sec"><div class="wrap">{eyebrow('Nos services',True)}<h2 class="c">Notre offre de services</h2>{carousel(svc_cards,"scar")}</div></section>
+<section class="sec alt"><div class="wrap">{eyebrow('Nos formations',True)}<h2 class="c">Notre offre de formations</h2>{crs}<p class="c"><a class="btn ghost" href="formations.html">Toutes nos formations</a></p></div></section>
 <section class="band"><div class="bandin"><p class="eyebrow w c">Valor Consultancy Africa</p><h2>Femme leader et d’impact en Afrique</h2><a class="play" href="https://www.youtube.com/watch?v=SF4aHwxHtZ0" target="_blank" rel="noopener" aria-label="Voir la vidéo"><i></i></a></div></section>
 <section class="sec"><div class="wrap">{eyebrow('Equipe VCA',True)}<h2 class="c">Notre équipe</h2><p class="c mut">Des personnes compétentes, dynamiques et prêtes à vous accompagner.</p><div class="tmg">{teamh}</div></div></section>
 <section class="sec alt"><div class="wrap">{eyebrow('Actualités',True)}<h2 class="c">Veille documentaire</h2><p class="c mut">Suivez nos dernières nouvelles et réflexions.</p><div class="nwg">{news}</div><p class="c"><a class="btn" href="actualites.html">Toutes les actualités</a></p></div></section>
@@ -231,8 +258,14 @@ write('services.html',page('Services','Nos services de conseil.',f'<section clas
 for s in services:
     img=f'<img class="rimg" src="{s["img"]}" alt="" onerror="this.remove()">' if s['img'] else ''
     inner('',svc_title(s),text(s['content'],150),f'{img}{body(s["content"])}<p><a class="btn" href="../contact.html">Demander un devis gratuit</a></p>','services.html',1,s['url'])
-cl=''.join(f'<div class="cc"><h3>{esc(text(c["title"]))}</h3><p>{esc(text(c.get("excerpt",""),160))}</p></div>' for c in courses)
-write('formations.html',page('Formations','Nos formations.',f'<section class="sec"><div class="wrap">{eyebrow("Nos formations",True)}<h2 class="c">Notre offre de formations</h2><div class="ccg">{cl}</div><p class="c"><a class="btn" href="contact.html">Nous contacter pour une formation</a></p></div></section>','formations.html',0,'Formations'))
+fcards=''.join(fc_card(c,i) for i,c in enumerate(courses))
+fb=BG[0] if BG else ''
+strip=''.join(f'<div class="fs" style="background-image:url({u})"></div>' for u in BG[1:4])
+ftxt=f'''<section class="fhero" style="background-image:url({fb})"><div class="fhin"><p class="eyebrow w c">Valor Consultancy Africa</p><h2>Développez vos compétences, <br>avec un accompagnement sur mesure</h2><p>Ateliers, masterclass et formations animés par des experts, adaptés à votre organisation et à vos équipes.</p><a class="btn" href="mailto:info@valorconsultancyafrica.com?subject=Demande de formation">Demander une formation</a></div></section>
+<section class="sec"><div class="wrap">{eyebrow("Nos formations",True)}<h2 class="c">Notre offre de formations</h2><p class="c mut">Passez la souris sur une formation pour la découvrir.</p><div class="fgrid2">{fcards}</div></div></section>
+<section class="fstrip">{strip}</section>
+<section class="sec alt"><div class="wrap narrow c"><h2>Une formation sur mesure ?</h2><p class="mut">Un devis gratuit est proposé. Un interlocuteur unique vous accompagne tout au long de la mission.</p><p><a class="btn" href="contact.html">Nous contacter</a></p></div></section>'''
+write('formations.html',page('Formations','Nos formations.',ftxt,'formations.html',0,'Formations'))
 idx=[]
 for p in posts:
     write(p['url'],page(text(p['title']),text(p['content'],150),f'<section class="sec"><div class="wrap narrow prose"><small>{fdate(p["date"])}</small><h2>{esc(text(p["title"]))}</h2>{body(p["content"])}</div></section>','actualites.html',1,'Actualités'))
@@ -295,7 +328,20 @@ footer{background:linear-gradient(rgba(25,28,28,.94),rgba(25,28,28,.94)),#1c1f1f
 .mvgrid{display:grid;grid-template-columns:.8fr 1.2fr;gap:44px;align-items:start}.mvimg img{width:100%;display:block;box-shadow:0 20px 50px rgba(0,0,0,.18)}.mvr{color:var(--red);font-weight:500;margin:0 0 12px}
 .acc{margin-top:22px;border:1px solid var(--line)}.acc summary{cursor:pointer;padding:14px 18px;font:700 20px "Roboto Condensed";background:var(--alt)}.acc p{padding:0 18px 14px}
 .chip{display:inline-block;background:var(--alt);border:1px solid var(--line);padding:6px 16px;border-radius:99px;font-size:14.500px;text-decoration:none;color:#222}a.chip:hover{border-color:var(--g);color:var(--g)}.chips.big{gap:14px}.chips.big .chip{font-size:16px;padding:9px 20px}
-@media(max-width:860px){.mvgrid{grid-template-columns:1fr}}
+.sc{transition:transform .3s,box-shadow .3s;padding:8px 8px 18px;background:#fff}.sc:hover{transform:scale(1.05);box-shadow:0 18px 40px rgba(0,0,0,.14)}
+.car{position:relative}.car .track{display:flex;gap:28px;overflow-x:auto;scroll-snap-type:x mandatory;scrollbar-width:none;padding:26px 6px 30px;scroll-behavior:smooth}.car .track::-webkit-scrollbar{display:none}
+.car .item{flex:0 0 calc((100% - 56px)/3);scroll-snap-align:start;min-width:0}
+.cnav{display:flex;align-items:center;justify-content:center;gap:18px;margin-top:6px}.cnav button{width:40px;height:40px;border-radius:50%;border:0;background:var(--g2);color:#fff;font-size:24px;line-height:1;cursor:pointer}.cnav button:hover{filter:brightness(.92)}
+.dots{display:flex;gap:10px}.dots i{width:11px;height:11px;border-radius:50%;background:#c9d1ce;cursor:pointer;transition:.2s}.dots i.on{background:var(--g);box-shadow:0 0 0 4px rgba(15,184,111,.25)}
+.fc{position:relative;overflow:hidden;background:#fff;border:1px solid var(--line);min-height:300px;transition:transform .35s,box-shadow .35s}.fc:hover{transform:scale(1.05);box-shadow:0 20px 44px rgba(20,30,70,.28);z-index:2}
+.fcbg{position:absolute;inset:0;background:center/cover;opacity:0;transition:opacity .4s}.fcbg:after{content:"";position:absolute;inset:0;background:rgba(36,52,110,.84)}.fc:hover .fcbg{opacity:1}
+.fcin{position:relative;padding:30px 28px;height:100%;display:flex;flex-direction:column;gap:10px}.fcin h3{font-size:23px;margin:0;transition:color .3s}.fcin p{margin:0;color:#555;transition:color .3s;flex:1}
+.fcin .plus{margin-top:6px;align-self:flex-start;display:inline-grid;place-items:center;width:38px;height:38px;border-radius:50%;background:var(--g2);color:#fff;font-size:22px}
+.fcin .btn.sm{display:none;align-self:flex-start;padding:10px 24px;font-size:15px}.fc:hover .fcin h3,.fc:hover .fcin p{color:#fff}.fc:hover .plus{display:none}.fc:hover .btn.sm{display:inline-block}
+.fgrid2{display:grid;grid-template-columns:repeat(auto-fill,minmax(300px,1fr));gap:28px;margin:36px 0 10px}
+.fhero{position:relative;min-height:380px;background:#24346e center/cover;display:grid;place-items:center;text-align:center;color:#fff}.fhero:before{content:"";position:absolute;inset:0;background:rgba(30,44,96,.72)}.fhin{position:relative;max-width:760px;padding:60px 24px}.fhin h2{color:#fff;font-size:clamp(28px,4vw,44px)}.fhin p{color:#e6ebf5}
+.fstrip{display:grid;grid-template-columns:repeat(3,1fr);gap:0}.fs{height:240px;background:center/cover}
+@media(max-width:860px){.car .item{flex:0 0 86%}.fstrip{grid-template-columns:1fr}.mvgrid{grid-template-columns:1fr}}
 @media(max-width:860px){.herogrid,.ctgrid,.fgrid{grid-template-columns:1fr}.hvimg{margin:0 auto}.burger{display:block}nav{display:none;position:absolute;left:0;right:0;top:100%;background:#fff;padding:10px 20px 16px;flex-direction:column;align-items:flex-start;box-shadow:0 12px 20px rgba(0,0,0,.08);border-radius:0 0 12px 12px}body.open nav{display:flex}.navbar{position:relative}.dd .ddm{position:static;display:block;box-shadow:none;padding-left:10px}.float{display:none}.sec{padding:46px 0}.band{clip-path:none}}
 ''')
 print(len(posts),'articles',len(services),'services',len(courses),'formations')
