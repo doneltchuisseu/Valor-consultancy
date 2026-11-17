@@ -1,4 +1,5 @@
-import json,re,html,os,shutil,unicodedata,zipfile
+import json,re,html,os,shutil,unicodedata,zipfile,time
+BUILDV=str(int(time.time()))
 from PIL import Image
 D=json.load(open('all.json'))
 OUT='dist2'
@@ -133,7 +134,7 @@ def page(title,desc,content,active='',depth=0,head=None,extra=''):
 <title>{esc(title)} – Valor Consultancy Africa</title><meta name="description" content="{esc(desc)}">
 <link rel="icon" href="{P('favicon_vca.png')}"><link rel="preconnect" href="https://fonts.googleapis.com"><link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
 <link href="https://fonts.googleapis.com/css2?family=Roboto+Condensed:wght@400;700&family=Roboto:wght@400;500;700&display=swap" rel="stylesheet">
-<link rel="stylesheet" href="{r}assets/style.css"></head><body>
+<link rel="stylesheet" href="{r}assets/style.css?v={BUILDV}"></head><body>
 <div class="top"><div class="wrap topin"><a class="brand" href="{r}index.html"><img src="{LOGO}" alt="Cabinet VCA" onerror="this.replaceWith(Object.assign(document.createElement('b'),{{textContent:'CABINET VCA'}}))"></a>
 <div class="ti"><span class="ic">{ICO['tel']}</span><div><b>Contacts :</b>WhatsApp : (+237) 672 950 994 | 671 005 489<br>Tél : (+237) 697 899 089 | (+33) 664 741 260</div></div>
 <div class="ti"><span class="ic">{ICO['mail']}</span><div><b>E-mail :</b><a href="mailto:info@valorconsultancyafrica.com">info@valorconsultancyafrica.com</a></div></div>
@@ -154,6 +155,16 @@ def page(title,desc,content,active='',depth=0,head=None,extra=''):
 import urllib.parse
 # ---------- accueil
 
+def svc_desc(s):
+    ov={'DÉVELOPPEMENT LOCAL':"Elus et Responsables administratifs d'une Collectivité Territoriale Décentralisée (CTD)."}
+    if s['title'] in ov: return ov[s['title']]
+    c=re.sub(r'<h[1-6][^>]*>.*?</h[1-6]>','',s['content'],flags=re.S|re.I)
+    for ln in re.split(r'</p>|<br\s*/?>|\n+|</li>|</div>',c):
+        if re.fullmatch(r'\s*(?:<[^>]+>\s*)*<strong>.*?</strong>\s*(?:<[^>]+>\s*)*',ln,flags=re.S): continue
+        t=text(ln)
+        if len(t)>35 and t!=t.upper(): return t if len(t)<=125 else t[:125].rsplit(' ',1)[0]+'…'
+    return text(s['content'],120)
+
 BGN=['group-of-young-people-sitting-on-conference-together.jpg','businesspeople-celebrating-success-600x400.jpg','businesswoman-with-face-mask-talking-to-her-colleagues-on-presentation-in-the-office.jpg','close-up-of-busy-businesswoman-writing-1536x1024.jpg','executives-joking-and-laughing-in-the-office.jpg.webp','staff-meeting-group-of-young-modern-people-in-smart-casual-wear-discussing-something-while-working-in-the-creative-office-business-time.jpg.webp','talking-to-audience.jpg.webp','group-of-diverse-people-having-business-meeting.jpg.webp','businessman-wearing-face-mask-while-giving-presentation-at-conference-hall-768x512.jpg.webp','network-connection-graphic-overlay-background-on-computer-screen-1536x922.jpg','formation.jpg','group-of-young-people-sitting-on-conference-together-while-raising-their-hands-to-ask-question-business-team-meeting-seminar-training-concept.jpg']
 BG=[x for x in (P(n) for n in BGN) if x]
 def fc_card(c,i):
@@ -164,7 +175,7 @@ def fc_card(c,i):
 def carousel(items,cls=''):
     return f'<div class="car {cls}"><div class="track">{items}</div><div class="cnav"><button class="cprev" aria-label="Précédent">‹</button><div class="dots"></div><button class="cnext" aria-label="Suivant">›</button></div></div>'
 def eyebrow(t,center=False): return f'<p class="eyebrow{" c" if center else ""}">{esc(t)}</p>'
-svc_cards=''.join(f'<a class="sc item" href="{s["url"]}"><div class="scimg">{"<img src=%s alt=\"\" loading=lazy onerror=\"this.parentNode.classList.add(&#39;noimg&#39;)\">"%s["img"] if s["img"] else ""}</div><h3>{esc(text(s["title"]).upper())}</h3><p>{esc(re.sub("^"+re.escape(text(s["title"])),"",text(s["content"],200),flags=re.I).strip()[:110])}…</p></a>' for s in services)
+svc_cards=''.join(f'<a class="sc item" href="{s["url"]}"><div class="scimg{" fit" if s["img"] and re.search("diagramme|Triangle",s["img"]) else ""}">'+(f'<img src="{s["img"]}" alt="" loading="lazy" onerror="this.parentNode.classList.add(\'noimg\')">' if s["img"] else '')+f'</div><h3>{esc(text(s["title"]).upper())}</h3><p>{esc(svc_desc(s))}</p><span class="more">En savoir plus <i class="sq2">→</i></span></a>' for s in services)
 crs=carousel(''.join(fc_card(c,i) for i,c in enumerate(courses)),'fcar')
 team=[('Marie-Victoire VÉNUS-PLOTON','Présidente Fondatrice de VCA',MV),('Didier Boris ANOKALI LANGOLO','Consultant Junior',P('ANOKALI-300x300.jpg')),('Daniel VALIYA','Consultant Junior',P('DANIEL-394x450.jpg'))]
 teamh=''.join(f'<div class="tm"><div class="tmimg"><img src="{i}" alt="{esc(n)}" loading="lazy"></div><div class="tmb"><div><b>{esc(n)}</b><span>{esc(p)}</span></div><a class="sq" href="marie-victoire-venus-ploton.html">+</a></div></div>' if 'Marie' in n else f'<div class="tm"><div class="tmimg"><img src="{i}" alt="{esc(n)}" loading="lazy"></div><div class="tmb"><div><b>{esc(n)}</b><span>{esc(p)}</span></div><i class="sq">+</i></div></div>' for n,p,i in team)
@@ -328,7 +339,8 @@ footer{background:linear-gradient(rgba(25,28,28,.94),rgba(25,28,28,.94)),#1c1f1f
 .mvgrid{display:grid;grid-template-columns:.8fr 1.2fr;gap:44px;align-items:start}.mvimg img{width:100%;display:block;box-shadow:0 20px 50px rgba(0,0,0,.18)}.mvr{color:var(--red);font-weight:500;margin:0 0 12px}
 .acc{margin-top:22px;border:1px solid var(--line)}.acc summary{cursor:pointer;padding:14px 18px;font:700 20px "Roboto Condensed";background:var(--alt)}.acc p{padding:0 18px 14px}
 .chip{display:inline-block;background:var(--alt);border:1px solid var(--line);padding:6px 16px;border-radius:99px;font-size:14.500px;text-decoration:none;color:#222}a.chip:hover{border-color:var(--g);color:var(--g)}.chips.big{gap:14px}.chips.big .chip{font-size:16px;padding:9px 20px}
-.sc{transition:transform .3s,box-shadow .3s;padding:8px 8px 18px;background:#fff}.sc:hover{transform:scale(1.05);box-shadow:0 18px 40px rgba(0,0,0,.14)}
+.scimg{aspect-ratio:auto;height:240px;background:#f3f6f4}.scimg.fit{background:#fff}.scimg.fit img{object-fit:contain}.sc{padding:26px 26px 30px;border:1px solid var(--line);display:flex;flex-direction:column;align-items:center}.sc p{color:#222;text-align:center;font-size:16px;margin:0}.sc .scimg{width:100%}.more{display:inline-flex;align-items:center;gap:12px;font-weight:700;color:#111;margin-top:18px}.sq2{display:grid;place-items:center;width:44px;height:44px;background:var(--g);color:#fff;font-style:normal;font-size:20px}
+.sc{transition:transform .3s,box-shadow .3s;background:#fff}.sc:hover{transform:scale(1.05);box-shadow:0 18px 40px rgba(0,0,0,.14)}
 .car{position:relative}.car .track{display:flex;gap:28px;overflow-x:auto;scroll-snap-type:x mandatory;scrollbar-width:none;padding:26px 6px 30px;scroll-behavior:smooth}.car .track::-webkit-scrollbar{display:none}
 .car .item{flex:0 0 calc((100% - 56px)/3);scroll-snap-align:start;min-width:0}
 .cnav{display:flex;align-items:center;justify-content:center;gap:18px;margin-top:6px}.cnav button{width:40px;height:40px;border-radius:50%;border:0;background:var(--g2);color:#fff;font-size:24px;line-height:1;cursor:pointer}.cnav button:hover{filter:brightness(.92)}
